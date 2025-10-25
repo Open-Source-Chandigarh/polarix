@@ -15,6 +15,8 @@
   <!-- <script src="profile.js"></script> -->
   <link rel="icon" type="image/png" href="./fav.png">
   <link rel="stylesheet" href="./category.css">
+  <!-- Loading and utility styles -->
+  <link rel="stylesheet" href="./css/loading.css">
 
 
 </head>
@@ -1078,38 +1080,87 @@
   <script
     src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+  <!-- Load utility scripts -->
+  <script src="./js/authUtils.js"></script>
+  <script src="./js/uiUtils.js"></script>
   <script>
     /*=============== AUTHENTICATION CHECK ===============*/
     function checkAuthAndRedirect() {
-      const user = JSON.parse(localStorage.getItem('user')) || null;
-
-      if (!user || !user.token) {
-        // User is not authenticated, redirect to signup page
-        alert('Please log in to access the dashboard.');
-        window.location.href = 'signup.html';
-        return false;
-      }
-
-      // Update user info in the sidebar if user is authenticated
-      if (user.username) {
-        const userNameElement = document.querySelector('.user-name');
-        if (userNameElement) {
-          userNameElement.textContent = user.username;
+      // Use auth utility if available
+      if (typeof getUser === 'function') {
+        const user = getUser();
+        
+        if (!user || !user.token) {
+          // User is not authenticated, redirect to signup page
+          alert('Please log in to access the dashboard.');
+          window.location.href = 'signup.html';
+          return false;
         }
-      }
+        
+        // Update user info in the sidebar if user is authenticated
+        if (user.username) {
+          const userNameElement = document.querySelector('.user-name');
+          if (userNameElement) {
+            userNameElement.textContent = user.username;
+          }
+        }
+        
+        // Add logout functionality
+        const logoutLink = document.getElementById('logout-link-sidebar');
+        if (logoutLink) {
+          logoutLink.addEventListener('click', function (e) {
+            e.preventDefault();
+            
+            if (confirm('Are you sure you want to logout?')) {
+              if (typeof logout === 'function') {
+                logout('index.html');
+              } else {
+                localStorage.removeItem('user');
+                sessionStorage.clear();
+                alert('You have been logged out successfully!');
+                window.location.href = 'index.html';
+              }
+            }
+          });
+        }
+        
+        return true;
+      } else {
+        // Fallback to original implementation
+        const user = JSON.parse(localStorage.getItem('user')) || null;
 
-      // Add logout functionality
-      const logoutLink = document.getElementById('logout-link-sidebar');
-      if (logoutLink) {
-        logoutLink.addEventListener('click', function (e) {
-          e.preventDefault();
-          localStorage.removeItem('user');
-          alert('You have been logged out successfully!');
-          window.location.href = 'index.html';
-        });
-      }
+        if (!user || !user.token) {
+          // User is not authenticated, redirect to signup page
+          alert('Please log in to access the dashboard.');
+          window.location.href = 'signup.html';
+          return false;
+        }
 
-      return true;
+        // Update user info in the sidebar if user is authenticated
+        if (user.username) {
+          const userNameElement = document.querySelector('.user-name');
+          if (userNameElement) {
+            userNameElement.textContent = user.username;
+          }
+        }
+
+        // Add logout functionality
+        const logoutLink = document.getElementById('logout-link-sidebar');
+        if (logoutLink) {
+          logoutLink.addEventListener('click', function (e) {
+            e.preventDefault();
+            
+            if (confirm('Are you sure you want to logout?')) {
+              localStorage.removeItem('user');
+              sessionStorage.clear();
+              alert('You have been logged out successfully!');
+              window.location.href = 'index.html';
+            }
+          });
+        }
+
+        return true;
+      }
     }
 
     /*=============== MOBILE MENU TOGGLE ===============*/

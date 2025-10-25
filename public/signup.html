@@ -529,9 +529,20 @@
         </div>
     </div>
 
+    <!-- Load CSS for loading states -->
+    <link rel="stylesheet" href="./css/loading.css">
+    
+    <!-- Load utility scripts -->
+    <script src="./js/authUtils.js"></script>
+    <script src="./js/uiUtils.js"></script>
     <script src="./js/signup.js"></script>
     <script>
         function handleCredentialResponse(response) {
+          // Show loading state
+          if (typeof showLoading === 'function') {
+              showLoading('Signing in with Google...');
+          }
+          
           fetch("https://polarix-back.onrender.com/api/auth/google", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -540,11 +551,33 @@
           .then(res => res.json())
           .then(data => {
             if (data.success) {
-              localStorage.setItem('user', JSON.stringify(data.user));
-              window.location.href = "maindashboard.html";
+              // Save user data using auth utility
+              if (typeof saveUser === 'function') {
+                  saveUser(data.user);
+              } else {
+                  localStorage.setItem('user', JSON.stringify(data.user));
+              }
+              
+              if (typeof updateLoadingMessage === 'function') {
+                  updateLoadingMessage('Login successful! Redirecting...');
+              }
+              
+              setTimeout(() => {
+                  window.location.href = "maindashboard.html";
+              }, 500);
             } else {
-              alert("Google Sign-In failed.");
+              if (typeof hideLoading === 'function') {
+                  hideLoading();
+              }
+              alert("Google Sign-In failed: " + (data.message || 'Unknown error'));
             }
+          })
+          .catch(error => {
+            if (typeof hideLoading === 'function') {
+                hideLoading();
+            }
+            console.error('Google Sign-In error:', error);
+            alert("Google Sign-In failed. Please try again.");
           });
         }
       </script>
