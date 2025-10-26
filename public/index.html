@@ -515,7 +515,7 @@
     <script>
         /*=============== AUTHENTICATION STATE MANAGEMENT ===============*/
         function checkAuthState() {
-            const user = JSON.parse(localStorage.getItem('user')) || null;
+            const user = getUser();
             
             if (user && user.token) {
                 // User is logged in - show dashboard options
@@ -526,32 +526,66 @@
             }
         }
 
+        function getUser() {
+            try {
+                const userStr = localStorage.getItem('user');
+                if (!userStr) return null;
+                
+                const user = JSON.parse(userStr);
+                
+                // Validate user object structure
+                if (!user || !user.token) {
+                    console.warn('Invalid user object in localStorage');
+                    return null;
+                }
+                
+                return user;
+            } catch (error) {
+                console.error('Error parsing user from localStorage:', error);
+                return null;
+            }
+        }
+
         function updateUIForLoggedInUser(user) {
             // Update navigation link
             const navDashboardLink = document.getElementById('nav-dashboard-link');
-            navDashboardLink.href = 'maindashboard.html';
-            navDashboardLink.innerHTML = 'Dashboard';
+            if (navDashboardLink) {
+                navDashboardLink.href = 'maindashboard.html';
+                navDashboardLink.innerHTML = 'Dashboard';
+            }
             
             // Update main signup button
             const mainSignupButton = document.getElementById('main-signup-button');
             const signupButtonText = document.getElementById('signup-button-text');
             const signupButtonSubtext = document.getElementById('signup-button-subtext');
             
-            mainSignupButton.href = 'maindashboard.html';
-            signupButtonText.textContent = 'Go to Dashboard';
-            signupButtonSubtext.textContent = 'Welcome back!';
+            if (mainSignupButton) {
+                mainSignupButton.href = 'maindashboard.html';
+            }
+            if (signupButtonText) {
+                signupButtonText.textContent = 'Go to Dashboard';
+            }
+            if (signupButtonSubtext) {
+                signupButtonSubtext.textContent = 'Welcome back!';
+            }
             
             // Update discount section button
             const discountSignupButton = document.getElementById('discount-signup-button');
             const discountButtonText = document.getElementById('discount-button-text');
             
-            discountSignupButton.href = 'maindashboard.html';
-            discountButtonText.textContent = 'Go to Dashboard';
+            if (discountSignupButton) {
+                discountSignupButton.href = 'maindashboard.html';
+            }
+            if (discountButtonText) {
+                discountButtonText.textContent = 'Go to Dashboard';
+            }
             
             // Update footer link
             const footerSignupLink = document.getElementById('footer-signup-link');
-            footerSignupLink.href = 'maindashboard.html';
-            footerSignupLink.textContent = 'Dashboard';
+            if (footerSignupLink) {
+                footerSignupLink.href = 'maindashboard.html';
+                footerSignupLink.textContent = 'Dashboard';
+            }
             
             // Add logout functionality to navigation
             addLogoutOption();
@@ -560,29 +594,43 @@
         function updateUIForLoggedOutUser() {
             // Update navigation link
             const navDashboardLink = document.getElementById('nav-dashboard-link');
-            navDashboardLink.href = 'signup.html';
-            navDashboardLink.innerHTML = 'Sign In';
+            if (navDashboardLink) {
+                navDashboardLink.href = 'signup.html';
+                navDashboardLink.innerHTML = 'Sign In';
+            }
             
             // Update main signup button
             const mainSignupButton = document.getElementById('main-signup-button');
             const signupButtonText = document.getElementById('signup-button-text');
             const signupButtonSubtext = document.getElementById('signup-button-subtext');
             
-            mainSignupButton.href = 'signup.html';
-            signupButtonText.textContent = 'Let\'s Sign Up';
-            signupButtonSubtext.textContent = 'Start Now';
+            if (mainSignupButton) {
+                mainSignupButton.href = 'signup.html';
+            }
+            if (signupButtonText) {
+                signupButtonText.textContent = 'Let\'s Sign Up';
+            }
+            if (signupButtonSubtext) {
+                signupButtonSubtext.textContent = 'Start Now';
+            }
             
             // Update discount section button
             const discountSignupButton = document.getElementById('discount-signup-button');
             const discountButtonText = document.getElementById('discount-button-text');
             
-            discountSignupButton.href = 'signup.html';
-            discountButtonText.textContent = 'Let\'s Sign Up';
+            if (discountSignupButton) {
+                discountSignupButton.href = 'signup.html';
+            }
+            if (discountButtonText) {
+                discountButtonText.textContent = 'Let\'s Sign Up';
+            }
             
             // Update footer link
             const footerSignupLink = document.getElementById('footer-signup-link');
-            footerSignupLink.href = 'signup.html';
-            footerSignupLink.textContent = 'Sign Up';
+            if (footerSignupLink) {
+                footerSignupLink.href = 'signup.html';
+                footerSignupLink.textContent = 'Sign Up';
+            }
         }
 
         function addLogoutOption() {
@@ -590,7 +638,7 @@
             const navList = document.querySelector('.nav__list');
             const existingLogout = document.getElementById('logout-link');
             
-            if (!existingLogout) {
+            if (!existingLogout && navList) {
                 const logoutItem = document.createElement('li');
                 logoutItem.className = 'nav__item';
                 logoutItem.innerHTML = '<a href="#" id="logout-link" class="nav__link">Logout</a>';
@@ -599,18 +647,42 @@
                 // Add logout functionality
                 document.getElementById('logout-link').addEventListener('click', function(e) {
                     e.preventDefault();
-                    localStorage.removeItem('user');
-                    alert('You have been logged out successfully!');
-                    location.reload(); 
+                    
+                    if (confirm('Are you sure you want to logout?')) {
+                        localStorage.removeItem('user');
+                        sessionStorage.clear();
+                        alert('You have been logged out successfully!');
+                        
+                        // Reload the page to update UI
+                        window.location.reload();
+                    }
                 });
             }
         }
 
         // Check authentication state when page loads
-        document.addEventListener('DOMContentLoaded', checkAuthState);
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthState();
+            
+            // Prevent navigation links from causing full page refresh
+            const navLinks = document.querySelectorAll('.nav__link');
+            navLinks.forEach(link => {
+                // Only handle internal navigation, not logout
+                if (link.id !== 'logout-link' && link.getAttribute('href') && link.getAttribute('href').startsWith('#')) {
+                    link.addEventListener('click', function(e) {
+                        // Let the default anchor behavior handle scrolling
+                        // This prevents any unwanted side effects
+                    });
+                }
+            });
+        });
         
-        
-        window.addEventListener('focus', checkAuthState);
+        // Check auth state when window regains focus (user returns to tab)
+        // But don't force a full page reload
+        window.addEventListener('focus', function() {
+            // Only update UI, don't reload or redirect
+            checkAuthState();
+        });
     </script>
 
 </body>
